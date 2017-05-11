@@ -9,15 +9,17 @@ import os
 
 def downloadYY():
 	os.system('wget http://csaweb.yonsei.ac.kr/~kim/YYiso_v2.tar.gz')
-	os.system('tar -xvf YYiso_v2.tar.gz')
+	os.system('tar -xf YYiso_v2.tar.gz')
 	os.system('mkdir YY')
-	os.system('mv V2 YY')
+	os.system('mv V2 YY/')
+	os.system('rm YYiso_v2.tar.gz')
 
 def downloadDartmouth():
 	os.system('http://stellar.dartmouth.edu/models/isochrones/UBVRIJHKsKp.tgz')
 	os.system('tar -xvf UBVRIJHKsKp.tgz')
 	os.system('mkdir YY')
 	os.system('mv V2 YY')
+	os.system('rm UBVRIJHKsKp.tgz')
 
 def get_vals(vec):
 	fvec   = np.sort(vec)
@@ -684,141 +686,183 @@ def get_pars_dartmouth(AGE,MASS, ret_all=False):
 
 	return TEFF, AR2
 
-global K, e, inc, P, FEH, FEH_val, FEH_err
-K   = 124.5
-e   = 0.0
-inc = 89.36*np.pi/180.
-P   = 6.5692203 * 24. * 3600.
+def comp():
 
-FEH_val, FEH_err = 0.2, 0.056
-AR_val, AR_err     = 14.980, 0.15
+	global K, e, inc, P, FEH, FEH_val, FEH_err, feh_free,isochrones, fehs, ages
+	f = open('input.dat','r')
+	lines = f.readlines()
+	for line in lines:
+		cos = line.split()
+		if cos[0] == 'K':
+			K = float(cos[1])
+		elif cos[0] == 'e':
+			e = float(cos[1])
+		elif cos[0] == 'inc':
+			inc = float(cos[1])*np.pi/180.
+		elif cos[0] == 'P':
+			P = float(cos[1]) * 24. * 3600.
+		elif  cos[0] == 'feh':
+			FEH_val, FEH_err = float(cos[1]), float(cos[2])
+		elif  cos[0] == 'aR':
+			AR_val, AR_err = float(cos[1]), float(cos[2])
+		elif  cos[0] == 'teff':
+			TEFF_val, TEFF_err = float(cos[1]), float(cos[2])
+		elif cos[0] == 'isoc':
+			isochrones = cos[1]
+		elif cos[0] == 'feh_free':
+			if cos[1] == 'True':
+				feh_free = True
+			elif cos[1] == 'False':
+				feh_free = False
+	if isochrones == 'YY' and os.access('YY/V2/Iso/yy00g.x53z08a0o2v2',os.F_OK)==False:
+		print 'Downloading YY isochrones...'
+		downloadYY()
 
-TEFF_val, TEFF_err = 5770., 85.
+	"""
+	K   = 124.5
+	e   = 0.0
+	inc = 89.36*np.pi/180.
+	P   = 6.5692203 * 24. * 3600.
 
+	FEH_val, FEH_err = 0.2, 0.056
+	AR_val, AR_err     = 14.980, 0.15
 
-y=np.array([TEFF_val,AR_val])
-yerr = np.array([TEFF_err,AR_err])
+	TEFF_val, TEFF_err = 5770., 85.
 
-isochrones = 'YY'
-feh_free   = False
-nwalkers =100
+	isochrones = 'YY'
+	feh_free   = False
+	"""
+	y=np.array([TEFF_val,AR_val])
+	yerr = np.array([TEFF_err,AR_err])
+	nwalkers =100
 
-if feh_free:
-	ndim = 3
-else:
-	ndim = 2
+	if feh_free:
+		ndim = 3
+	else:
+		ndim = 2
 
-#print get_pars_dartmouth(4.49935553, 0.8916894,ret_all=True)
-#print get_pars(4.73,1.01,ret_all=True)
-#print fds
-"""
-nll = lambda *args: -lnlike(*args)
-result = op.minimize(nll, [1.1, 1.2], args=(y, yerr))
-oage, omass = result["x"]
-print result['x']
-"""
+	#print get_pars_dartmouth(4.49935553, 0.8916894,ret_all=True)
+	#print get_pars(4.73,1.01,ret_all=True)
+	#print fds
+	"""
+	nll = lambda *args: -lnlike(*args)
+	result = op.minimize(nll, [1.1, 1.2], args=(y, yerr))
+	oage, omass = result["x"]
+	print result['x']
+	"""
 
-if isochrones == 'YY':
-	vec_ages = np.arange(0.0011,11,0.1)
-	vec_mass = np.arange(0.41,4.5,0.1)
-	fehs = np.array([-1.288247, -0.681060, -0.432835, -0.272683, 0.046320, 0.385695, 0.603848, 0.775363])
-	ages = np.array([0.001, 0.002, 0.004, 0.006, 0.008, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.2, 0.4, 0.6, \
-	        		 0.8, 0.9, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, \
-	        		 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0])
-elif isochrones == 'Dartmouth':
-	vec_ages = np.arange(1.001,15,0.1)
-	vec_mass = np.arange(0.21,2.2,0.1)
-	fehs = np.array([-1.0, -0.5, 0.0, 0.2, 0.3, 0.5])
-	ages = np.array([1.,1.25,1.5,1.75,2.,2.25,2.5,2.75,3.,3.25,3.5,3.75,4.,4.25,4.5,4.75,5.,5.5,6.,6.5,\
-		7.,7.5,8.,8.5,9.,9.5,10.,10.5,11.,11.5,12.,12.5,13.,13.5,14.,14.5,15.])
-
-it=0
-for vec_a in vec_ages:
-	for vec_m in vec_mass:
-		if feh_free:
-			theta = vec_a,vec_m,FEH_val
-		else:
-			theta = vec_a,vec_m
-		try:
-			like = lnlike(theta, y, yerr)
-			if np.isinf(like) == False:
-				#print vec_a,vec_m, like
-				if it == 0 or like > like_max:
-					like_max = like
-					best_a,best_m = vec_a,vec_m
-		except:
-			'pass'
-		it+=1
-print 'search:', best_a, best_m, like_max
-
-if feh_free:
-	guess = np.array([best_a,best_m,FEH_val])
-else:
-	guess = np.array([best_a,best_m])
-
-pos = [guess + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(y, yerr))
-sampler.run_mcmc(pos, 500)
-samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
-
-if feh_free:
-	fig = corner.corner(samples, labels=["$AGE$", "$MASS$", "$[Fe/H]$"])
-else:
-	fig = corner.corner(samples, labels=["$AGE$", "$MASS$"])
-
-fig.savefig("triangle.png")
-dicti = {'samples':samples}
-pickle.dump( dicti, open( "samples.pkl", 'w' ) )
-
-fages   = np.sort(samples[:,0])
-fmasses = np.sort(samples[:,1])
-
-fage,age1,age2 = get_vals(fages)
-fmass,mass1,mass2 = get_vals(fmasses)
-
-print 'AGE =', fage, '(',age1, age2,')'
-print 'MASS =', fmass, '(',mass1,mass2,')'
-if feh_free:
-	ffehs = np.sort(samples[:,2])
-	ffeh,feh1,feh2 = get_vals(ffehs)
-	print 'FEH =', ffeh, '(',feh1, feh2,')'
-
-ftefs, fars, floggs, frads, flums, fmvs = [],[],[],[],[],[]
-for i in range(len(samples)):
 	if isochrones == 'YY':
-		if feh_free:
-			results = get_pars_fehfree(samples[i,0],samples[i,1],samples[i,2],ret_all=True)
-		else:
-			results = get_pars(samples[i,0],samples[i,1],ret_all=True)
+		vec_ages = np.arange(0.0011,11,0.1)
+		vec_mass = np.arange(0.41,4.5,0.1)
+		fehs = np.array([-1.288247, -0.681060, -0.432835, -0.272683, 0.046320, 0.385695, 0.603848, 0.775363])
+		ages = np.array([0.001, 0.002, 0.004, 0.006, 0.008, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.2, 0.4, 0.6, \
+		        		 0.8, 0.9, 1., 1.2, 1.4, 1.6, 1.8, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, \
+		        		 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0])
 	elif isochrones == 'Dartmouth':
-		if feh_free:
-			results = get_pars_dartmouth(samples[i,0],samples[i,1],samples[i,2],ret_all=True)
-		else:
-			results = get_pars_dartmouth(samples[i,0],samples[i,1],ret_all=True)
+		vec_ages = np.arange(1.001,15,0.1)
+		vec_mass = np.arange(0.21,2.2,0.1)
+		fehs = np.array([-1.0, -0.5, 0.0, 0.2, 0.3, 0.5])
+		ages = np.array([1.,1.25,1.5,1.75,2.,2.25,2.5,2.75,3.,3.25,3.5,3.75,4.,4.25,4.5,4.75,5.,5.5,6.,6.5,\
+			7.,7.5,8.,8.5,9.,9.5,10.,10.5,11.,11.5,12.,12.5,13.,13.5,14.,14.5,15.])
 
-	ftefs.append(results[0])
-	fars.append(results[1])
-	floggs.append(results[2])
-	frads.append(results[3])
-	flums.append(results[4])
-	fmvs.append(results[5])
-ftefs, fars, floggs, frads, flums, fmvs = np.array(ftefs), np.array(fars), np.array(floggs), np.array(frads), np.array(flums), np.array(fmvs) 
+	it=0
+	for vec_a in vec_ages:
+		for vec_m in vec_mass:
+			if feh_free:
+				theta = vec_a,vec_m,FEH_val
+			else:
+				theta = vec_a,vec_m
+			try:
+				like = lnlike(theta, y, yerr)
+				print like
+				if np.isinf(like) == False:
+					#print vec_a,vec_m, like
+					if it == 0 or like > like_max:
+						like_max = like
+						best_a,best_m = vec_a,vec_m
+			except:
+				'pass'
+			it+=1
+	print 'Initial Guess:', best_a, best_m, like_max
 
-fage,age1,age2 = get_vals(fages)
-fmass,mass1,mass2 = get_vals(fmasses)
-ftef,tef1,tef2 = get_vals(ftefs)
-far,ar1,ar2  = get_vals(fars)
-flogg, logg1, logg2 = get_vals(floggs)
-frad,rad1,rad2 = get_vals(frads)
-flum,lum1,lum2 = get_vals(flums)
-fmv,mv1,mv2 = get_vals(fmvs)
-print '\n'
-print 'AGE =', fage, '(',age1, age2,')'
-print 'MASS =', fmass, '(',mass1,mass2,')'
-print 'Teff =', ftef, '(',tef1, tef2,')'
-print 'a/Rs =', far, '(',ar1,ar2,')'
-print 'log(g) =', flogg, '(',logg1, logg2,')'
-print 'Rs =', frad, '(',rad1,rad2,')'
-print 'L =', flum, '(',lum1, lum2,')'
-print 'Mv =', fmv, '(',mv1,mv2,')'
-#print get_pars(2.3,-0.13,1.29,)
+	if feh_free:
+		guess = np.array([best_a,best_m,FEH_val])
+	else:
+		guess = np.array([best_a,best_m])
+
+	pos = [guess + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+	sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(y, yerr))
+	sampler.run_mcmc(pos, 500)
+	samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
+
+	if feh_free:
+		fig = corner.corner(samples, labels=["$AGE$", "$MASS$", "$[Fe/H]$"])
+	else:
+		fig = corner.corner(samples, labels=["$AGE$", "$MASS$"])
+
+	fig.savefig("triangle.png")
+	dicti = {'samples':samples}
+	pickle.dump( dicti, open( "samples.pkl", 'w' ) )
+
+	fages   = np.sort(samples[:,0])
+	fmasses = np.sort(samples[:,1])
+
+	fage,age1,age2 = get_vals(fages)
+	fmass,mass1,mass2 = get_vals(fmasses)
+
+	print 'AGE =', fage, '(',age1, age2,')'
+	print 'MASS =', fmass, '(',mass1,mass2,')'
+	if feh_free:
+		ffehs = np.sort(samples[:,2])
+		ffeh,feh1,feh2 = get_vals(ffehs)
+		print 'FEH =', ffeh, '(',feh1, feh2,')'
+
+	ftefs, fars, floggs, frads, flums, fmvs = [],[],[],[],[],[]
+	for i in range(len(samples)):
+		if isochrones == 'YY':
+			if feh_free:
+				results = get_pars_fehfree(samples[i,0],samples[i,1],samples[i,2],ret_all=True)
+			else:
+				results = get_pars(samples[i,0],samples[i,1],ret_all=True)
+		elif isochrones == 'Dartmouth':
+			if feh_free:
+				results = get_pars_dartmouth(samples[i,0],samples[i,1],samples[i,2],ret_all=True)
+			else:
+				results = get_pars_dartmouth(samples[i,0],samples[i,1],ret_all=True)
+
+		ftefs.append(results[0])
+		fars.append(results[1])
+		floggs.append(results[2])
+		frads.append(results[3])
+		flums.append(results[4])
+		fmvs.append(results[5])
+	ftefs, fars, floggs, frads, flums, fmvs = np.array(ftefs), np.array(fars), np.array(floggs), np.array(frads), np.array(flums), np.array(fmvs) 
+
+	fage,age1,age2 = get_vals(fages)
+	fmass,mass1,mass2 = get_vals(fmasses)
+	ftef,tef1,tef2 = get_vals(ftefs)
+	far,ar1,ar2  = get_vals(fars)
+	flogg, logg1, logg2 = get_vals(floggs)
+	frad,rad1,rad2 = get_vals(frads)
+	flum,lum1,lum2 = get_vals(flums)
+	fmv,mv1,mv2 = get_vals(fmvs)
+	print '\n'
+	#print 'AGE =', fage, '(',age1, age2,')'
+	#print 'MASS =', fmass, '(',mass1,mass2,')'
+	print 'Teff =', ftef, '(',tef1, tef2,')'
+	print 'a/Rs =', far, '(',ar1,ar2,')'
+	print 'log(g) =', flogg, '(',logg1, logg2,')'
+	print 'Rs =', frad, '(',rad1,rad2,')'
+	print 'L =', flum, '(',lum1, lum2,')'
+	print 'Mv =', fmv, '(',mv1,mv2,')'
+
+	dout = {'Teff':ftef, 'lTeff':tef1, 'uTeff':tef2, \
+			'aR':far, 'laR':ar1, 'uaR':ar2, \
+			'logg':flogg, 'llogg':logg1, 'ulogg':logg2, \
+			'Rs':frad, 'lRs':rad1, 'uRs':rad2, \
+			'Ls':flum, 'lLs':lum1, 'uLs':lum2, \
+			'Mv':fmv, 'lMv':mv1, 'uMv':mv2, \
+			}
+			
+	return dout
+	#print get_pars(2.3,-0.13,1.29,)
