@@ -1,0 +1,6 @@
+fehm10afep0.UBVRIJHKsKp	-1.0
+fehm05afep0.UBVRIJHKsKp	-0.5
+fehp00afep0.UBVRIJHKsKp	 0.0
+fehp02afep0.UBVRIJHKsKp	 0.2
+fehp03afep0.UBVRIJHKsKp	 0.3
+fehp05afep0.UBVRIJHKsKp	 0.5
