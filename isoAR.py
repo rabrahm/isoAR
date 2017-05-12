@@ -15,11 +15,12 @@ def downloadYY():
 	os.system('rm YYiso_v2.tar.gz')
 
 def downloadDartmouth():
-	os.system('http://stellar.dartmouth.edu/models/isochrones/UBVRIJHKsKp.tgz')
-	os.system('tar -xvf UBVRIJHKsKp.tgz')
-	os.system('mkdir YY')
-	os.system('mv V2 YY')
+	os.system('wget http://stellar.dartmouth.edu/models/isochrones/UBVRIJHKsKp.tgz')
+	os.system('tar -xf UBVRIJHKsKp.tgz')
 	os.system('rm UBVRIJHKsKp.tgz')
+	os.system('mv isochrones/UBVRIJHKsKp .')
+	os.system('rm -r isochrones')
+
 
 def get_vals(vec):
 	fvec   = np.sort(vec)
@@ -717,7 +718,9 @@ def comp():
 	if isochrones == 'YY' and os.access('YY/V2/Iso/yy00g.x53z08a0o2v2',os.F_OK)==False:
 		print 'Downloading YY isochrones...'
 		downloadYY()
-
+	if isochrones == 'Dartmouth' and os.access('UBVRIJHKsKp/fehp00afep0.UBVRIJHKsKp',os.F_OK)==False:
+		print 'Downloading Dartmouth isochrones...'
+		downloadDartmouth()
 	"""
 	K   = 124.5
 	e   = 0.0
@@ -774,7 +777,6 @@ def comp():
 				theta = vec_a,vec_m
 			try:
 				like = lnlike(theta, y, yerr)
-				print like
 				if np.isinf(like) == False:
 					#print vec_a,vec_m, like
 					if it == 0 or like > like_max:
@@ -863,6 +865,11 @@ def comp():
 			'Ls':flum, 'lLs':lum1, 'uLs':lum2, \
 			'Mv':fmv, 'lMv':mv1, 'uMv':mv2, \
 			}
-			
+	if feh_free:
+		dout['feh']=ffeh
+		dout['lfeh'] = feh1
+		dout['ufeh'] = feh2
+
+
 	return dout
 	#print get_pars(2.3,-0.13,1.29,)
