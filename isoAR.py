@@ -79,6 +79,13 @@ def downloadYY():
 	os.system('mkdir YY')
 	os.system('mv V2 YY/')
 	os.system('rm YYiso_v2.tar.gz')
+	os.system('cp YYmix2.f YY/V2/')
+	cwd = os.getcwd()
+	os.chdir('YY/V2/')
+	os.system('gfortran YYmix2.f')
+	os.chdir(cwd)
+	print 'done...'
+
 
 def downloadDartmouth():
 	os.system('wget http://stellar.dartmouth.edu/models/isochrones/UBVRIJHKsKp.tgz')
